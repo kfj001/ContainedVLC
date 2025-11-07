@@ -15,6 +15,5 @@ docker run --rm -it \
   -e STREAM_KEY='YOUR_STREAM_KEY_HERE' \
   -e SERVER='YOUR_RTMPS_SERVER_HERE' \
   --cpus="3" \         
-  --memory="2g" \      
-  contained_vlc
+  --memory="2g" contained_vlc
 ```
