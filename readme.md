@@ -10,10 +10,5 @@ OBS Studio is pre-configured to stream videos from the collection in a continuou
 
 ## How to run
 ```
-docker run --rm -it \
-  -v "/actual_video_directory:/app/videos" \
-  -e STREAM_KEY='YOUR_STREAM_KEY_HERE' \
-  -e SERVER='YOUR_RTMPS_SERVER_HERE' \
-  --cpus="3" \         
-  --memory="2g" contained_vlc
+docker run --rm -it -v "/actual_video_directory:/app/videos" -e STREAM_KEY='YOUR_STREAM_KEY_HERE' -e SERVER='YOUR_RTMPS_SERVER_HERE' --cpus="3" --memory="2g" contained_vlc
 ```
