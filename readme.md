@@ -5,6 +5,9 @@ stream key as an environment variable `STREAM_KEY`.
 
 OBS Studio is pre-configured to stream videos from the collection in a continuous and random order at 1280x720 (720p).
 
+## How to build
+`$ docker build --pull --rm -f 'dockerfile' -t 'contained_vlc' '.'`
+
 ## How to run
 ```
 $ docker run --rm -it \
