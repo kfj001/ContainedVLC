@@ -12,8 +12,8 @@ disp_num="${DISPLAY#*:}"
 # Start Xvfb in background with -ac (disable access control) and no TCP
 Xvfb "$DISPLAY" -screen 0 1280x720x24 -ac -nolisten tcp >/dev/null 2>&1 &
 
-# Wait up to 10s for the X socket to appear
-timeout=10
+# Wait up to 30s for the X socket to appear
+timeout=30
 while [ $timeout -gt 0 ]; do
 	if [ -e "/tmp/.X11-unix/X${disp_num}" ]; then
 		break

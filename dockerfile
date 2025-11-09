@@ -1,4 +1,4 @@
-FROM debian
+FROM debian:12.9-slim
 
 # Install only the runtime packages required for headless OBS
 RUN apt-get update 
