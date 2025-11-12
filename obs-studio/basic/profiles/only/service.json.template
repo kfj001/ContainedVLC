@@ -1,8 +1,0 @@
-{
-    "settings": {
-        "key": "${STREAM_KEY}",
-        "server": "${SERVER}",
-        "use_auth": false
-    },
-    "type": "rtmp_custom"
-}

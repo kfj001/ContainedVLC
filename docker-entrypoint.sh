@@ -1,41 +1,50 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Minimal entrypoint: start Xvfb (assume not running) then run OBS.
-# Improves reliability by using -ac and waiting for the X socket to appear.
-export DISPLAY=${DISPLAY:-:99}
-export LANG=${LANG:-C.UTF-8}
+# Collect files from /app/videos into an array, shuffle them, and
+# loop through them in random order calling process_file on each.
 
-# compute display number (e.g. :99 -> 99)
-disp_num="${DISPLAY#*:}"
+videos_dir="/app/videos"
 
-# Start Xvfb in background with -ac (disable access control) and no TCP
-Xvfb "$DISPLAY" -screen 0 1280x720x24 -ac -nolisten tcp >/dev/null 2>&1 &
+if [[ ! -d "${videos_dir}" ]]; then
+	echo "Directory ${videos_dir} does not exist; nothing to do." >&2
+	exit 0
+fi
 
-# Wait up to 30s for the X socket to appear
-timeout=30
-while [ $timeout -gt 0 ]; do
-	if [ -e "/tmp/.X11-unix/X${disp_num}" ]; then
-		break
-	fi
-	sleep 0.5
-	timeout=$((timeout - 1))
+declare -a files=()
+# Gather regular files only (no directories), handling whitespace in names.
+while IFS= read -r -d '' f; do
+	files+=("$f")
+done < <(find "${videos_dir}" -maxdepth 1 -type f -print0)
+
+if [[ ${#files[@]} -eq 0 ]]; then
+	echo "No files found in ${videos_dir}; nothing to do."
+	exit 0
+fi
+
+# Shuffle files into a new array. Use printf + xargs -0 to safely handle
+# filenames containing whitespace. shuf randomizes the order.
+mapfile -t shuffled < <(printf '%s\0' "${files[@]}" | xargs -0 -n1 printf '%s\n' | shuf)
+
+process_file() {
+	local file="$1"
+	# <-- Put your command(s) here. For example:
+	# /usr/bin/vlc --intf dummy "$file"
+	# or
+	# ffmpeg -i "$file" ...
+exec ffmpeg -i "$file" \
+  -c:v h264_nvenc -b:v 128k  \
+  -c:a aac -b:a 64k  \
+  -f flv "rtmps://dc1-1.rtmp.t.me/s/3298881468:lEWeplhaNqgGWuf9CHxoFw"
+#    -vf "scale=-2:720" \
+
+	# Placeholder action (safe default). Replace this with the real command.
+	echo "Processing: $file"
+}
+
+# Iterate in the shuffled order and process each file.
+for f in "${shuffled[@]}"; do
+	process_file "$f"
 done
 
-if [ $timeout -le 0 ]; then
-	echo "Warning: X socket /tmp/.X11-unix/X${disp_num} did not appear; obs may fail to connect to display" >&2
-fi
-
-# Render service.json from template if present
-TEMPLATE="/root/.config/obs-studio/basic/profiles/only/service.json.template"
-TARGET="/root/.config/obs-studio/basic/profiles/only/service.json"
-if [ -f "$TEMPLATE" ]; then
-  # export default env var names you expect, e.g. STREAM_KEY, SERVER
-  : "${STREAM_KEY:=}"
-  : "${SERVER:=}"
-  envsubst < "$TEMPLATE" > "$TARGET"
-  chmod 600 "$TARGET"
-fi
-
-# Exec OBS with the requested fixed args
-exec obs --startstreaming
+exit 0
