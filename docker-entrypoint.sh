@@ -11,6 +11,13 @@ if [[ ! -d "${videos_dir}" ]]; then
 	exit 0
 fi
 
+# Build the stream target from two environment variables so the host can
+# supply the base URL and the stream key separately.
+STREAMURL="${STREAMURL:-}"
+STREAM_KEY="${STREAM_KEY:-}"
+STREAM_TARGET="${STREAMURL}${STREAM_KEY}"
+echo "Using streaming target: ${STREAM_TARGET}"
+
 # Loop forever: re-gather files each pass, reshuffle, and process them in
 # randomized order. If no files are present, sleep briefly and retry so the
 # container can pick up files added later.
@@ -36,12 +43,8 @@ process_file() {
 
 	# Read input in real-time (-re) so ffmpeg streams at native (1x) speed
 	# and do not use `exec` so the script keeps running through the loop.
-	if ! ffmpeg -re -i "$file" \
- 	  -c:v h264_nvenc -b:v 500k \
- 	  -vf "scale=-2:480" \
- 	  -c:a aac -b:a 120k \
-	  -preset fast \
- 	  -f flv "rtmps://dc1-1.rtmp.t.me/s/3298881468:lEWeplhaNqgGWuf9CHxoFw"; then
+	if ! ffmpeg -re -i "$file" -c copy \
+	  -f flv "${STREAM_TARGET}"; then
 		echo "ffmpeg failed for $file with exit code $?" >&2
 	fi
 }
