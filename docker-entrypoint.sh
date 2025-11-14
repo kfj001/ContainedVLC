@@ -19,7 +19,7 @@ STREAM_TARGET="${STREAMURL}${STREAM_KEY}"
 echo "Using streaming target: ${STREAM_TARGET}"
 
 # Loop forever: re-gather files each pass, reshuffle, and process them in
-# randomized order. If no files are present, sleep briefly and retry so the
+# randomized order. If no files are present, retry so the
 # container can pick up files added later.
 while true; do
 	declare -a files=()
@@ -52,6 +52,8 @@ echo "Starting ffmpeg with playlist ${playlist} -> ${STREAM_TARGET}"
 # Use -re so ffmpeg plays back in real time; -safe 0 allows arbitrary paths.
 if ! ffmpeg -re -f concat -safe 0 -i "$playlist" -c copy -f flv "${STREAM_TARGET}"; then
 	echo "ffmpeg failed with exit code $?" >&2
+	# back off a bit before retrying to avoid a tight restart loop
+	sleep "5"
 fi
 done
 echo "This shouldn't ever happen"
