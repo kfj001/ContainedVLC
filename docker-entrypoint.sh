@@ -37,22 +37,22 @@ while true; do
 	# filenames containing whitespace. shuf randomizes the order.
 	mapfile -t shuffled < <(printf '%s\0' "${files[@]}" | xargs -0 -n1 printf '%s\n' | shuf)
 
-process_file() {
-    local file="$1"
-    echo "Processing: $file"
+# Serialize the shuffled list to a playlist file that ffmpeg's concat demuxer
+# can read. The file is overwritten each cycle at /tmp/playlist.txt as requested.
+playlist="/tmp/playlist.txt"
+: > "$playlist"
 
-    # Read input in real-time (-re) so ffmpeg streams at native (1x) speed
-    # and do not use `exec` so the script keeps running through the loop.
-    if ! ffmpeg -re -i "$file" -c copy \
-      -f flv "${STREAM_TARGET}"; then
-		echo "ffmpeg failed for $file with exit code $?" >&2
-    fi
-}
+# Escape single-quotes in filenames for the concat file's single-quoted entries.
+for f in "${shuffled[@]}"; do
+	esc=${f//\'/\'\\\'\'}
+	printf "file '%s'\n" "$esc" >> "$playlist"
+done
 
-	# Iterate in the shuffled order and process each file.
-	for f in "${shuffled[@]}"; do
-		process_file "$f"
-	done
+echo "Starting ffmpeg with playlist ${playlist} -> ${STREAM_TARGET}"
+# Use -re so ffmpeg plays back in real time; -safe 0 allows arbitrary paths.
+if ! ffmpeg -re -f concat -safe 0 -i "$playlist" -c copy -f flv "${STREAM_TARGET}"; then
+	echo "ffmpeg failed with exit code $?" >&2
+fi
 done
 echo "This shouldn't ever happen"
 exit 0
