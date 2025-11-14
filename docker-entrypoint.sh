@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 # Collect files from /app/videos into an array, shuffle them, and
 # loop through them in random order calling process_file on each.
@@ -38,15 +38,15 @@ while true; do
 	mapfile -t shuffled < <(printf '%s\0' "${files[@]}" | xargs -0 -n1 printf '%s\n' | shuf)
 
 process_file() {
-	local file="$1"
-	echo "Processing: $file"
+    local file="$1"
+    echo "Processing: $file"
 
-	# Read input in real-time (-re) so ffmpeg streams at native (1x) speed
-	# and do not use `exec` so the script keeps running through the loop.
-	if ! ffmpeg -re -i "$file" -c copy \
-	  -f flv "${STREAM_TARGET}"; then
+    # Read input in real-time (-re) so ffmpeg streams at native (1x) speed
+    # and do not use `exec` so the script keeps running through the loop.
+    if ! ffmpeg -re -i "$file" -c copy \
+      -f flv "${STREAM_TARGET}"; then
 		echo "ffmpeg failed for $file with exit code $?" >&2
-	fi
+    fi
 }
 
 	# Iterate in the shuffled order and process each file.
@@ -54,5 +54,5 @@ process_file() {
 		process_file "$f"
 	done
 done
-
+echo "This shouldn't ever happen"
 exit 0
